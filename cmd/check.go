@@ -35,8 +35,7 @@ var checkCmd = &cobra.Command{
 by the UI. This may not always reflect the actual connection
 state, as there is some delay before the modem detects a drop.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := conn.Login()
-		if err != nil {
+		if err := conn.Login(); err != nil {
 			fmt.Println(err)
 			return
 		}

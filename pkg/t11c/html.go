@@ -73,16 +73,14 @@ func findNode(id string, n *html.Node) *html.Node {
 			return nil
 		}
 
-		ok, nID := getID(n)
-		if ok && nID == id {
+		if ok, nID := getID(n); ok && nID == id {
 			return n
 		}
 	}
 
 	// Search nodes depth-first
 	for child := n.FirstChild; child != nil; child = child.NextSibling {
-		matched := findNode(id, child)
-		if matched != nil {
+		if matched := findNode(id, child); matched != nil {
 			return matched
 		}
 	}

@@ -37,8 +37,7 @@ var reconnectCmd = &cobra.Command{
 of the modem. This is useful if the connection has dropped but the modem has not yet
 detected the failure state.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := conn.Login()
-		if err != nil {
+		if err := conn.Login(); err != nil {
 			fmt.Println(err)
 			return
 		}
@@ -55,14 +54,12 @@ detected the failure state.`,
 		fmt.Println("Login complete, resetting connection...")
 
 		if !connectOnly {
-			err = conn.SetModemState(false)
-			if err != nil {
+			if err = conn.SetModemState(false); err != nil {
 				fmt.Println("Disconnect failed")
 			}
 		}
 
-		err = conn.SetModemState(true)
-		if err != nil {
+		if err = conn.SetModemState(true); err != nil {
 			fmt.Println("Reconnect failed")
 			return
 		}

@@ -79,8 +79,7 @@ func (c *Connection) getURL(path string) url.URL {
 }
 
 func (c *Connection) ignoreBody(resp *http.Response) error {
-	_, err := io.Copy(ioutil.Discard, resp.Body)
-	if err != nil {
+	if _, err := io.Copy(ioutil.Discard, resp.Body); err != nil {
 		return err
 	}
 	return resp.Body.Close()
@@ -88,8 +87,7 @@ func (c *Connection) ignoreBody(resp *http.Response) error {
 
 func (c *Connection) Login() error {
 	if c.client == nil {
-		err := c.init()
-		if err != nil {
+		if err := c.init(); err != nil {
 			return err
 		}
 	}
@@ -100,8 +98,7 @@ func (c *Connection) Login() error {
 	if err != nil {
 		return err
 	}
-	err = c.ignoreBody(initResp)
-	if err != nil {
+	if err := c.ignoreBody(initResp); err != nil {
 		return err
 	}
 
@@ -122,8 +119,7 @@ func (c *Connection) Login() error {
 
 func (c *Connection) TestSession() (bool, error) {
 	if c.client == nil {
-		err := c.init()
-		if err != nil {
+		if err := c.init(); err != nil {
 			return false, err
 		}
 	}
@@ -133,8 +129,7 @@ func (c *Connection) TestSession() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	err = c.ignoreBody(resp)
-	if err != nil {
+	if err = c.ignoreBody(resp); err != nil {
 		return false, err
 	}
 
@@ -143,8 +138,7 @@ func (c *Connection) TestSession() (bool, error) {
 
 func (c *Connection) ModemIsConnected() (bool, error) {
 	if c.client == nil {
-		err := c.init()
-		if err != nil {
+		if err := c.init(); err != nil {
 			return false, err
 		}
 	}
