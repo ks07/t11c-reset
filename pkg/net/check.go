@@ -2,6 +2,7 @@ package net
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/sparrc/go-ping"
@@ -30,6 +31,11 @@ func CheckRemoteConnectivity(ctx context.Context, dest string, rawSocket bool) (
 	}()
 
 	pinger.Run()
+
+	// Need to check pings were actually attempted, as a workaround for https://github.com/sparrc/go-ping/issues/92
+	if pinger.Statistics().PacketsSent == 0 {
+		return false, errors.New("no ping packets were sent, potential configuration error")
+	}
 
 	return pinger.Statistics().PacketLoss < downThreshold, nil
 }
