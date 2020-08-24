@@ -34,6 +34,7 @@ import (
 
 var (
 	cfgFile  string
+	dryrun   bool
 	username string
 	password string
 	hostname string
@@ -49,7 +50,7 @@ var rootCmd = &cobra.Command{
 tool interacts with the web interface, and must be provided the credentials
 and hostname of the router.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		conn = t11c.NewConnection(viper.GetString("username"), viper.GetString("password"), viper.GetString("hostname"))
+		conn = t11c.NewConnection(viper.GetBool("no-action"), viper.GetString("username"), viper.GetString("password"), viper.GetString("hostname"))
 		return nil
 	},
 }
@@ -69,6 +70,7 @@ func init() {
 	// These persistent flags are global across the application.
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.t11c-reset.yaml)")
 
+	rootCmd.PersistentFlags().BoolVarP(&dryrun, "no-action", "n", false, "Don't make changes to the modem")
 	rootCmd.PersistentFlags().StringVar(&username, "username", "admin", "The username to login with")
 	rootCmd.PersistentFlags().StringVar(&password, "password", "", "The password to login with")
 	rootCmd.PersistentFlags().StringVar(&hostname, "hostname", "192.168.1.1", "The hostname or IP of the router")

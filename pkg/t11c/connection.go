@@ -36,14 +36,16 @@ import (
 )
 
 type Connection struct {
+	DryRun   bool // If true, don't make any changes to the modem
 	Username string
 	Password string
 	Hostname string
 	client   *http.Client
 }
 
-func NewConnection(username, password, hostname string) *Connection {
+func NewConnection(dryrun bool, username, password, hostname string) *Connection {
 	return &Connection{
+		DryRun:   dryrun,
 		Username: username,
 		Password: password,
 		Hostname: hostname,
@@ -173,6 +175,11 @@ func (c *Connection) SetModemState(connect bool) error {
 		}
 	}
 
+	if c.DryRun {
+		return nil
+	}
+
+	// The typo here is intentional
 	u := c.getURL("/cgi-bin/PPPoEManulDial.asp")
 
 	data := url.Values{}
