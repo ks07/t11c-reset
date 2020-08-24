@@ -23,10 +23,12 @@ package cmd
 
 import (
 	"context"
-	"github.com/ks07/t11c-reset/internal"
-	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
+
+	"github.com/spf13/cobra"
+
+	"github.com/ks07/t11c-reset/internal"
 )
 
 var (
@@ -59,7 +61,7 @@ are lost, then connect to the router and reset the modem.`,
 			}
 		}()
 
-		internal.WatchReset(ctx, conn, interval, privileged, remoteHost)
+		internal.WatchReset(ctx, logger, conn, interval, privileged, remoteHost)
 	},
 }
 

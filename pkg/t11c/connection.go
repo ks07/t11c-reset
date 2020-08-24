@@ -34,6 +34,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -43,18 +45,21 @@ type Connection struct {
 	Password string
 	Hostname string
 	client   *http.Client
+	logger   log.Logger
 }
 
-func NewConnection(dryrun bool, username, password, hostname string) *Connection {
+func NewConnection(logger log.Logger, dryrun bool, username, password, hostname string) *Connection {
 	return &Connection{
 		DryRun:   dryrun,
 		Username: username,
 		Password: password,
 		Hostname: hostname,
+		logger:   logger,
 	}
 }
 
 func (c *Connection) init() error {
+	level.Debug(c.logger).Log("msg", "initialising client")
 	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 	if err != nil {
 		return err
@@ -88,6 +93,7 @@ func (c *Connection) ignoreBody(resp *http.Response) error {
 }
 
 func (c *Connection) getWithContext(ctx context.Context, u url.URL) (*http.Response, error) {
+	level.Debug(c.logger).Log("request_url", u.String(), "msg", "requesting URL")
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return nil, err
@@ -97,6 +103,7 @@ func (c *Connection) getWithContext(ctx context.Context, u url.URL) (*http.Respo
 }
 
 func (c *Connection) postFormWithContext(ctx context.Context, u url.URL, data url.Values) (*http.Response, error) {
+	level.Debug(c.logger).Log("request_url", u.String(), "msg", "submitting form")
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, err

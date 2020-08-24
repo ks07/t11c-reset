@@ -3,6 +3,7 @@ module github.com/ks07/t11c-reset
 go 1.15
 
 require (
+	github.com/go-kit/kit v0.10.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/sparrc/go-ping v0.0.0-20190613174326-4e5b6552494c
 	github.com/spf13/cobra v1.0.0

@@ -25,6 +25,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -34,12 +36,14 @@ import (
 
 var (
 	cfgFile  string
+	verbose  bool
 	dryrun   bool
 	username string
 	password string
 	hostname string
 
-	conn *t11c.Connection
+	conn   *t11c.Connection
+	logger log.Logger
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -50,7 +54,17 @@ var rootCmd = &cobra.Command{
 tool interacts with the web interface, and must be provided the credentials
 and hostname of the router.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		conn = t11c.NewConnection(viper.GetBool("no-action"), viper.GetString("username"), viper.GetString("password"), viper.GetString("hostname"))
+		logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
+		var levelLimit level.Option
+		if viper.GetBool("verbose") {
+			levelLimit = level.AllowAll()
+		} else {
+			levelLimit = level.AllowInfo()
+		}
+		logger = level.NewFilter(logger, levelLimit)
+		logger = log.With(logger, "ts", log.DefaultTimestampUTC)
+
+		conn = t11c.NewConnection(logger, viper.GetBool("no-action"), viper.GetString("username"), viper.GetString("password"), viper.GetString("hostname"))
 		return nil
 	},
 }
@@ -59,7 +73,7 @@ and hostname of the router.`,
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		level.Error(logger).Log("msg", "failed to start", "err", err)
 		os.Exit(1)
 	}
 }
@@ -69,6 +83,7 @@ func init() {
 
 	// These persistent flags are global across the application.
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.t11c-reset.yaml)")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "write verbose logging output")
 
 	rootCmd.PersistentFlags().BoolVarP(&dryrun, "no-action", "n", false, "Don't make changes to the modem")
 	rootCmd.PersistentFlags().StringVar(&username, "username", "admin", "The username to login with")

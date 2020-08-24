@@ -23,8 +23,9 @@ package cmd
 
 import (
 	"context"
-	"fmt"
+	"os"
 
+	"github.com/go-kit/kit/log/level"
 	"github.com/spf13/cobra"
 )
 
@@ -41,33 +42,33 @@ detected the failure state.`,
 		ctx := context.Background()
 
 		if err := conn.Login(ctx); err != nil {
-			fmt.Println(err)
-			return
+			level.Error(logger).Log("msg", "failed to login", "err", err)
+			os.Exit(2)
 		}
 
 		ok, err := conn.TestSession(ctx)
 		if err != nil {
-			fmt.Println(err)
-			return
+			level.Error(logger).Log("msg", "failed to check session", "err", err)
+			os.Exit(2)
 		}
 		if !ok {
-			fmt.Println("Login failed")
-			return
+			level.Error(logger).Log("msg", "login completed but failed, check credentials")
+			os.Exit(2)
 		}
-		fmt.Println("Login complete, resetting connection...")
+		level.Info(logger).Log("msg", "login succeeded, resetting connection...")
 
 		if !connectOnly {
 			if err = conn.SetModemState(ctx, false); err != nil {
-				fmt.Println("Disconnect failed")
+				level.Error(logger).Log("msg", "failed to disconnect modem", "err", err)
 			}
 		}
 
 		if err = conn.SetModemState(ctx, true); err != nil {
-			fmt.Println("Reconnect failed")
-			return
+			level.Error(logger).Log("msg", "failed to reconnect modem", "err", err)
+			os.Exit(2)
 		}
 
-		fmt.Println("Done!")
+		level.Info(logger).Log("msg", "done")
 	},
 }
 

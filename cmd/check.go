@@ -23,8 +23,9 @@ package cmd
 
 import (
 	"context"
-	"fmt"
+	"os"
 
+	"github.com/go-kit/kit/log/level"
 	"github.com/spf13/cobra"
 )
 
@@ -34,25 +35,28 @@ var checkCmd = &cobra.Command{
 	Short: "Checks the reported connection state of the modem",
 	Long: `Checks the connection state of the modem as reported
 by the UI. This may not always reflect the actual connection
-state, as there is some delay before the modem detects a drop.`,
+state, as there is some delay before the modem detects a drop.
+
+Exits with a code of 2 if the modem reports as disconnected.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.Background()
 
 		if err := conn.Login(ctx); err != nil {
-			fmt.Println(err)
+			level.Error(logger).Log("msg", "failed to login", "err", err)
 			return
 		}
 
 		connected, err := conn.ModemIsConnected(ctx)
 		if err != nil {
-			fmt.Println(err)
+			level.Error(logger).Log("msg", "failed to check state", "err", err)
 			return
 		}
 
 		if connected {
-			fmt.Println("Modem believes connection is active")
+			level.Info(logger).Log("msg", "Modem believes connection is active")
 		} else {
-			fmt.Println("Modem believes connection is down")
+			level.Info(logger).Log("msg", "Modem believes connection is down")
+			os.Exit(2)
 		}
 	},
 }
