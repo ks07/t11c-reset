@@ -22,6 +22,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -35,12 +36,14 @@ var checkCmd = &cobra.Command{
 by the UI. This may not always reflect the actual connection
 state, as there is some delay before the modem detects a drop.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := conn.Login(); err != nil {
+		ctx := context.Background()
+
+		if err := conn.Login(ctx); err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		connected, err := conn.ModemIsConnected()
+		connected, err := conn.ModemIsConnected(ctx)
 		if err != nil {
 			fmt.Println(err)
 			return

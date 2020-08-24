@@ -22,6 +22,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -37,12 +38,14 @@ var reconnectCmd = &cobra.Command{
 of the modem. This is useful if the connection has dropped but the modem has not yet
 detected the failure state.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := conn.Login(); err != nil {
+		ctx := context.Background()
+
+		if err := conn.Login(ctx); err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		ok, err := conn.TestSession()
+		ok, err := conn.TestSession(ctx)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -54,12 +57,12 @@ detected the failure state.`,
 		fmt.Println("Login complete, resetting connection...")
 
 		if !connectOnly {
-			if err = conn.SetModemState(false); err != nil {
+			if err = conn.SetModemState(ctx, false); err != nil {
 				fmt.Println("Disconnect failed")
 			}
 		}
 
-		if err = conn.SetModemState(true); err != nil {
+		if err = conn.SetModemState(ctx, true); err != nil {
 			fmt.Println("Reconnect failed")
 			return
 		}

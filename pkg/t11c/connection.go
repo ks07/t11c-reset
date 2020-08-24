@@ -22,6 +22,7 @@ THE SOFTWARE.
 package t11c
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -30,6 +31,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"strings"
 	"time"
 
 	"golang.org/x/net/publicsuffix"
@@ -85,7 +87,27 @@ func (c *Connection) ignoreBody(resp *http.Response) error {
 	return resp.Body.Close()
 }
 
-func (c *Connection) Login() error {
+func (c *Connection) getWithContext(ctx context.Context, u url.URL) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.client.Do(req)
+}
+
+func (c *Connection) postFormWithContext(ctx context.Context, u url.URL, data url.Values) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), strings.NewReader(data.Encode()))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	return c.client.Do(req)
+}
+
+func (c *Connection) Login(ctx context.Context) error {
 	if c.client == nil {
 		if err := c.init(); err != nil {
 			return err
@@ -94,7 +116,7 @@ func (c *Connection) Login() error {
 
 	// A session cookie is only assigned on the 302 to the login page
 	initURL := c.getURL("/")
-	initResp, err := c.client.Get(initURL.String())
+	initResp, err := c.getWithContext(ctx, initURL)
 	if err != nil {
 		return err
 	}
@@ -110,14 +132,14 @@ func (c *Connection) Login() error {
 	// The T11C doesn't pass this as a value, and doesn't escape any trailing '='!
 	loginURL.RawQuery = credParamEncoded
 
-	loginResp, err := c.client.Get(loginURL.String())
+	loginResp, err := c.getWithContext(ctx, loginURL)
 	if err != nil {
 		return err
 	}
 	return c.ignoreBody(loginResp)
 }
 
-func (c *Connection) TestSession() (bool, error) {
+func (c *Connection) TestSession(ctx context.Context) (bool, error) {
 	if c.client == nil {
 		if err := c.init(); err != nil {
 			return false, err
@@ -125,7 +147,7 @@ func (c *Connection) TestSession() (bool, error) {
 	}
 
 	u := c.getURL("/cgi-bin/main.html")
-	resp, err := c.client.Get(u.String())
+	resp, err := c.getWithContext(ctx, u)
 	if err != nil {
 		return false, err
 	}
@@ -136,7 +158,7 @@ func (c *Connection) TestSession() (bool, error) {
 	return resp.StatusCode == http.StatusOK, nil
 }
 
-func (c *Connection) ModemIsConnected() (bool, error) {
+func (c *Connection) ModemIsConnected(ctx context.Context) (bool, error) {
 	if c.client == nil {
 		if err := c.init(); err != nil {
 			return false, err
@@ -144,7 +166,7 @@ func (c *Connection) ModemIsConnected() (bool, error) {
 	}
 
 	u := c.getURL("/cgi-bin/pages/statusview.cgi")
-	resp, err := c.client.Get(u.String())
+	resp, err := c.getWithContext(ctx, u)
 	if err != nil {
 		return false, err
 	}
@@ -161,7 +183,7 @@ func (c *Connection) ModemIsConnected() (bool, error) {
 	return ip != "0.0.0.0", nil
 }
 
-func (c *Connection) SetModemState(connect bool) error {
+func (c *Connection) SetModemState(ctx context.Context, connect bool) error {
 	if c.client == nil {
 		err := c.init()
 		if err != nil {
@@ -187,7 +209,7 @@ func (c *Connection) SetModemState(connect bool) error {
 		data.Add("DipConnFlag", "2")
 	}
 
-	resp, err := c.client.PostForm(u.String(), data)
+	resp, err := c.postFormWithContext(ctx, u, data)
 	if err != nil {
 		return err
 	}

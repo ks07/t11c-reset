@@ -36,25 +36,25 @@ func checkReset(ctx context.Context, conn *t11c.Connection, privileged bool, rem
 	}
 
 	fmt.Println("Connection is down, reconnecting...")
-	valid, err := conn.TestSession()
+	valid, err := conn.TestSession(ctx)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
 	if !valid {
-		if err := conn.Login(); err != nil {
+		if err := conn.Login(ctx); err != nil {
 			fmt.Println(err)
 			return
 		}
 	}
 
-	if err := conn.SetModemState(false); err != nil {
+	if err := conn.SetModemState(ctx, false); err != nil {
 		// If explicit disconnection fails, just attempt to connect anyway
 		fmt.Println(err)
 	}
 
-	if err := conn.SetModemState(true); err != nil {
+	if err := conn.SetModemState(ctx, true); err != nil {
 		fmt.Println(err)
 		return
 	}
