@@ -24,6 +24,7 @@ package t11c
 import (
 	"errors"
 	"io"
+	"net"
 	"strings"
 
 	"golang.org/x/net/html"
@@ -47,7 +48,12 @@ func extractWANIP(body io.Reader) (string, error) {
 
 	for child := n.FirstChild; child != nil; child = child.NextSibling {
 		if child.Type == html.TextNode {
-			return strings.TrimSpace(child.Data), nil
+			ipText := strings.TrimSpace(child.Data)
+			// Check that the string is a valid IP address
+			if ip := net.ParseIP(ipText); ip == nil {
+				continue
+			}
+			return ipText, nil
 		}
 	}
 
