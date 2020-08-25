@@ -13,6 +13,17 @@ import (
 
 func WatchReset(ctx context.Context, logger log.Logger, conn *t11c.Connection, interval uint, privileged bool, remoteHost string) {
 	level.Info(logger).Log("interval", interval, "remote_host", remoteHost, "msg", "starting monitoring")
+
+	// Run a check immediately, unless the context has already been cancelled
+	select {
+	case <-ctx.Done():
+		level.Info(logger).Log("msg", "monitoring cancelled")
+		return
+	default:
+		checkReset(ctx, logger, conn, privileged, remoteHost)
+	}
+
+	// After the initial check, start the ticker which will first trigger after the interval
 	ticker := time.NewTicker(time.Duration(interval) * time.Second)
 	defer ticker.Stop()
 
