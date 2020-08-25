@@ -22,10 +22,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"context"
-	"os"
-	"os/signal"
-
 	"github.com/spf13/cobra"
 
 	"github.com/ks07/t11c-reset/internal"
@@ -44,23 +40,6 @@ var watchCmd = &cobra.Command{
 	Long: `Regularly pings an external server to check for connectivity issues. If packets
 are lost, then connect to the router and reset the modem.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		baseCtx := context.Background()
-		ctx, cancel := context.WithCancel(baseCtx)
-		defer cancel()
-
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt)
-		defer signal.Stop(c)
-
-		go func() {
-			select {
-			case <-c:
-				cancel()
-			case <-ctx.Done():
-				return
-			}
-		}()
-
 		internal.WatchReset(ctx, logger, conn, interval, privileged, remoteHost)
 	},
 }

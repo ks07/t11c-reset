@@ -22,7 +22,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"context"
 	"os"
 
 	"github.com/go-kit/kit/log/level"
@@ -39,8 +38,6 @@ state, as there is some delay before the modem detects a drop.
 
 Exits with a code of 2 if the modem reports as disconnected.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx := context.Background()
-
 		if err := conn.Login(ctx); err != nil {
 			level.Error(logger).Log("msg", "failed to login", "err", err)
 			return

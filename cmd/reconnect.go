@@ -22,7 +22,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"context"
 	"os"
 
 	"github.com/go-kit/kit/log/level"
@@ -39,8 +38,6 @@ var reconnectCmd = &cobra.Command{
 of the modem. This is useful if the connection has dropped but the modem has not yet
 detected the failure state.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx := context.Background()
-
 		if err := conn.Login(ctx); err != nil {
 			level.Error(logger).Log("msg", "failed to login", "err", err)
 			os.Exit(2)

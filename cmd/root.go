@@ -22,8 +22,10 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -42,6 +44,8 @@ var (
 	password string
 	hostname string
 
+	cancel context.CancelFunc
+	ctx    context.Context
 	conn   *t11c.Connection
 	logger log.Logger
 )
@@ -53,7 +57,7 @@ var rootCmd = &cobra.Command{
 	Long: `A tool for resetting the ADSL modem on a Zyxel AMG1302-T11C. The
 tool interacts with the web interface, and must be provided the credentials
 and hostname of the router.`,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
 		var levelLimit level.Option
 		if viper.GetBool("verbose") {
@@ -64,8 +68,26 @@ and hostname of the router.`,
 		logger = level.NewFilter(logger, levelLimit)
 		logger = log.With(logger, "ts", log.DefaultTimestampUTC)
 
+		baseCtx := context.Background()
+		ctx, cancel = context.WithCancel(baseCtx)
+
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt)
+		defer signal.Stop(c)
+
+		go func() {
+			select {
+			case <-c:
+				cancel()
+			case <-ctx.Done():
+				return
+			}
+		}()
+
 		conn = t11c.NewConnection(logger, viper.GetBool("no-action"), viper.GetString("username"), viper.GetString("password"), viper.GetString("hostname"))
-		return nil
+	},
+	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+		cancel()
 	},
 }
 
