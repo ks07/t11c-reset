@@ -27,18 +27,20 @@ import (
 	"strings"
 
 	"golang.org/x/net/html"
+
+	"github.com/ks07/t11c-reset/pkg/dom"
 )
 
 var errWANIPElementNotFound = errors.New("no WAN IP element found")
 var errWANIPTextNotFound = errors.New("no WAN IP text found")
 
 func extractWANIP(body io.Reader) (string, error) {
-	dom, err := html.Parse(body)
+	root, err := html.Parse(body)
 	if err != nil {
 		return "", err
 	}
 
-	n := findNode("DeviceInfo_WanIP", dom)
+	n := dom.FindBodyElement("DeviceInfo_WanIP", root)
 	if n == nil {
 		return "", errWANIPElementNotFound
 	}
@@ -50,40 +52,4 @@ func extractWANIP(body io.Reader) (string, error) {
 	}
 
 	return "", errWANIPTextNotFound
-}
-
-func getID(n *html.Node) (bool, string) {
-	for _, attr := range n.Attr {
-		if attr.Key == "id" {
-			return true, attr.Val
-		}
-	}
-	return false, ""
-}
-
-func findNode(id string, n *html.Node) *html.Node {
-	// Quit early if the node isn't an interesting type or one that can have interesting children
-	if n.Type != html.ElementNode && n.Type != html.DocumentNode {
-		return nil
-	}
-
-	if n.Type == html.ElementNode {
-		// Don't traverse the head section
-		if n.Data == "head" {
-			return nil
-		}
-
-		if ok, nID := getID(n); ok && nID == id {
-			return n
-		}
-	}
-
-	// Search nodes depth-first
-	for child := n.FirstChild; child != nil; child = child.NextSibling {
-		if matched := findNode(id, child); matched != nil {
-			return matched
-		}
-	}
-
-	return nil
 }
