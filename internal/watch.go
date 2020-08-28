@@ -51,16 +51,29 @@ func checkReset(ctx context.Context, logger log.Logger, conn *t11c.Connection, p
 	}
 
 	level.Info(logger).Log("msg", "connection is down")
+	for {
+		if err := resetAndWait(ctx, logger, conn, privileged, remoteHost); err != nil {
+			level.Warn(logger).Log("msg", "modem reset failed", "err", err)
+		} else {
+			level.Info(logger).Log("msg", "connection restored")
+			break
+		}
+	}
+}
+
+func resetAndWait(ctx context.Context, logger log.Logger, conn *t11c.Connection, privileged bool, remoteHost string) error {
+	level.Info(logger).Log("msg", "resetting modem")
+
 	valid, err := conn.TestSession(ctx)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to check session", "err", err)
-		return
+		return err
 	}
 
 	if !valid {
 		if err := conn.Login(ctx); err != nil {
 			level.Error(logger).Log("msg", "failed to login", "err", err)
-			return
+			return err
 		}
 	}
 
@@ -71,6 +84,10 @@ func checkReset(ctx context.Context, logger log.Logger, conn *t11c.Connection, p
 
 	if err := conn.SetModemState(ctx, true); err != nil {
 		level.Error(logger).Log("msg", "failed to reconnect modem", "err", err)
-		return
+		return err
 	}
+
+	level.Info(logger).Log("msg", "reset complete, waiting for connectivity")
+	err = net.WaitForRemoteConnectivity(ctx, logger, remoteHost, privileged)
+	return err
 }
