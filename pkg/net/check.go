@@ -13,14 +13,26 @@ import (
 const downThreshold = 1.0 // The packet loss proportion below which the connection is considered up
 const pingsRequired = 2   // The number of responses required before the connection is deemed restored
 
-func makePinger(ctx context.Context, dest string, rawSocket bool) (*ping.Pinger, error) {
-	pinger, err := ping.NewPinger(dest)
+type PingChecker struct {
+	Dest      string
+	RawSocket bool
+}
+
+func NewPingChecker(dest string, rawSocket bool) PingChecker {
+	return PingChecker{
+		Dest:      dest,
+		RawSocket: rawSocket,
+	}
+}
+
+func (pc PingChecker) makePinger(ctx context.Context) (*ping.Pinger, error) {
+	pinger, err := ping.NewPinger(pc.Dest)
 	if err != nil {
 		return nil, err
 	}
 
 	// Run platform-specific setup for the ping socket
-	platformSetupPinger(pinger, rawSocket)
+	platformSetupPinger(pinger, pc.RawSocket)
 
 	// Immediately stop pinging if the context is cancelled
 	go func() {
@@ -32,8 +44,8 @@ func makePinger(ctx context.Context, dest string, rawSocket bool) (*ping.Pinger,
 	return pinger, nil
 }
 
-func CheckRemoteConnectivity(ctx context.Context, logger log.Logger, dest string, rawSocket bool) (bool, error) {
-	pinger, err := makePinger(ctx, dest, rawSocket)
+func (pc PingChecker) CheckRemoteConnectivity(ctx context.Context, logger log.Logger) (bool, error) {
+	pinger, err := pc.makePinger(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -55,8 +67,8 @@ func CheckRemoteConnectivity(ctx context.Context, logger log.Logger, dest string
 	return stats.PacketLoss < downThreshold, nil
 }
 
-func WaitForRemoteConnectivity(ctx context.Context, logger log.Logger, dest string, rawSocket bool) error {
-	pinger, err := makePinger(ctx, dest, rawSocket)
+func (pc PingChecker) WaitForRemoteConnectivity(ctx context.Context, logger log.Logger) error {
+	pinger, err := pc.makePinger(ctx)
 	if err != nil {
 		return err
 	}

@@ -14,13 +14,15 @@ import (
 func WatchReset(ctx context.Context, logger log.Logger, conn *t11c.Connection, interval uint, privileged bool, remoteHost string) {
 	level.Info(logger).Log("interval", interval, "remote_host", remoteHost, "msg", "starting monitoring")
 
+	checker := net.NewPingChecker(remoteHost, privileged)
+
 	// Run a check immediately, unless the context has already been cancelled
 	select {
 	case <-ctx.Done():
 		level.Info(logger).Log("msg", "monitoring cancelled")
 		return
 	default:
-		checkReset(ctx, logger, conn, privileged, remoteHost)
+		checkReset(ctx, logger, conn, checker)
 	}
 
 	// After the initial check, start the ticker which will first trigger after the interval
@@ -33,13 +35,13 @@ func WatchReset(ctx context.Context, logger log.Logger, conn *t11c.Connection, i
 			level.Info(logger).Log("msg", "monitoring cancelled")
 			return
 		case <-ticker.C:
-			checkReset(ctx, logger, conn, privileged, remoteHost)
+			checkReset(ctx, logger, conn, checker)
 		}
 	}
 }
 
-func checkReset(ctx context.Context, logger log.Logger, conn *t11c.Connection, privileged bool, remoteHost string) {
-	up, err := net.CheckRemoteConnectivity(ctx, logger, remoteHost, privileged)
+func checkReset(ctx context.Context, logger log.Logger, conn *t11c.Connection, checker net.PingChecker) {
+	up, err := checker.CheckRemoteConnectivity(ctx, logger)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to start connectivity tests", "err", err)
 		return
@@ -52,7 +54,7 @@ func checkReset(ctx context.Context, logger log.Logger, conn *t11c.Connection, p
 
 	level.Info(logger).Log("msg", "connection is down")
 	for {
-		if err := resetAndWait(ctx, logger, conn, privileged, remoteHost); err != nil {
+		if err := resetAndWait(ctx, logger, conn, checker); err != nil {
 			level.Warn(logger).Log("msg", "modem reset failed", "err", err)
 		} else {
 			level.Info(logger).Log("msg", "connection restored")
@@ -61,7 +63,7 @@ func checkReset(ctx context.Context, logger log.Logger, conn *t11c.Connection, p
 	}
 }
 
-func resetAndWait(ctx context.Context, logger log.Logger, conn *t11c.Connection, privileged bool, remoteHost string) error {
+func resetAndWait(ctx context.Context, logger log.Logger, conn *t11c.Connection, checker net.PingChecker) error {
 	level.Info(logger).Log("msg", "resetting modem")
 
 	valid, err := conn.TestSession(ctx)
@@ -88,6 +90,6 @@ func resetAndWait(ctx context.Context, logger log.Logger, conn *t11c.Connection,
 	}
 
 	level.Info(logger).Log("msg", "reset complete, waiting for connectivity")
-	err = net.WaitForRemoteConnectivity(ctx, logger, remoteHost, privileged)
+	err = checker.WaitForRemoteConnectivity(ctx, logger)
 	return err
 }
