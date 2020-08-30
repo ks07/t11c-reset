@@ -10,8 +10,8 @@ import (
 	"github.com/sparrc/go-ping"
 )
 
-const downThreshold = 1.0 // The packet loss proportion below which the connection is considered up
-const pingsRequired = 2   // The number of responses required before the connection is deemed restored
+const downThreshold = 100.0 // The packet loss proportion below which the connection is considered up
+const pingsRequired = 2     // The number of responses required before the connection is deemed restored
 
 type PingChecker struct {
 	Dest      string
