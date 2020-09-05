@@ -6,7 +6,7 @@ Requires=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/t11c-reset watch --config=/usr/local/etc/t11c-reset.yaml -p
+ExecStart=/usr/local/bin/t11c-reset watch --config=/usr/local/etc/t11c-reset.yaml -p
 KillSignal=SIGINT
 Restart=always
 RestartSec=30
