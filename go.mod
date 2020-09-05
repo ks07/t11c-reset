@@ -16,3 +16,5 @@ require (
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 )
+
+replace github.com/sparrc/go-ping => github.com/voidint/go-ping v0.0.0-20200322071507-b648e00b1fd9

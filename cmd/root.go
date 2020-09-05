@@ -73,12 +73,12 @@ and hostname of the router.`,
 
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt)
-		defer signal.Stop(c)
 
 		go func() {
 			select {
 			case <-c:
 				cancel()
+				return
 			case <-ctx.Done():
 				return
 			}

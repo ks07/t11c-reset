@@ -36,16 +36,18 @@ func (pc PingChecker) makePinger(ctx context.Context) (*ping.Pinger, error) {
 
 	// Immediately stop pinging if the context is cancelled
 	go func() {
-		for _ = range ctx.Done() {
-			pinger.Stop()
-		}
+		<-ctx.Done()
+		pinger.Stop()
 	}()
 
 	return pinger, nil
 }
 
 func (pc PingChecker) CheckRemoteConnectivity(ctx context.Context, logger log.Logger) (bool, error) {
-	pinger, err := pc.makePinger(ctx)
+	pingerCtx, pingerCancel := context.WithCancel(ctx)
+	defer pingerCancel()
+
+	pinger, err := pc.makePinger(pingerCtx)
 	if err != nil {
 		return false, err
 	}
@@ -68,7 +70,10 @@ func (pc PingChecker) CheckRemoteConnectivity(ctx context.Context, logger log.Lo
 }
 
 func (pc PingChecker) WaitForRemoteConnectivity(ctx context.Context, logger log.Logger) error {
-	pinger, err := pc.makePinger(ctx)
+	pingerCtx, pingerCancel := context.WithCancel(ctx)
+	defer pingerCancel()
+
+	pinger, err := pc.makePinger(pingerCtx)
 	if err != nil {
 		return err
 	}
