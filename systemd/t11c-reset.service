@@ -1,0 +1,15 @@
+[Unit]
+Description=Monitors external connectivity, triggering a modem reset if it fails.
+Documentation=https://github.com/ks07/t11c-reset
+After=network-online.target
+Requires=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/t11c-reset watch --config=/usr/local/etc/t11c-reset.yaml -p
+KillSignal=SIGINT
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
