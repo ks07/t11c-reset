@@ -28,9 +28,9 @@ import (
 )
 
 var (
-	interval   uint
-	privileged bool
-	remoteHost string
+	interval    uint
+	privileged  bool
+	remoteHosts []string
 )
 
 // watchCmd represents the watch command
@@ -40,7 +40,7 @@ var watchCmd = &cobra.Command{
 	Long: `Regularly pings an external server to check for connectivity issues. If packets
 are lost, then connect to the router and reset the modem.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		internal.WatchReset(ctx, logger, conn, interval, privileged, remoteHost)
+		internal.WatchReset(ctx, logger, conn, interval, privileged, remoteHosts)
 	},
 }
 
@@ -49,5 +49,5 @@ func init() {
 
 	watchCmd.Flags().BoolVarP(&privileged, "raw-ping", "p", false, "Attempt to use raw sockets to send ping (ignored on Windows)")
 	watchCmd.Flags().UintVarP(&interval, "interval", "i", 15, "The interval, in seconds, between ping tests")
-	watchCmd.Flags().StringVarP(&remoteHost, "remote", "r", "1.1.1.1", "The remote address to ping to test connectivity")
+	watchCmd.Flags().StringSliceVarP(&remoteHosts, "remote", "r", []string{"1.1.1.1"}, "The remote address to ping to test connectivity")
 }

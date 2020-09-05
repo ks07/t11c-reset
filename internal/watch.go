@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/go-kit/kit/log"
@@ -11,10 +12,10 @@ import (
 	"github.com/ks07/t11c-reset/pkg/t11c"
 )
 
-func WatchReset(ctx context.Context, logger log.Logger, conn *t11c.Connection, interval uint, privileged bool, remoteHost string) {
-	level.Info(logger).Log("interval", interval, "remote_host", remoteHost, "msg", "starting monitoring")
+func WatchReset(ctx context.Context, logger log.Logger, conn *t11c.Connection, interval uint, privileged bool, remoteHosts []string) {
+	level.Info(logger).Log("interval", interval, "remote_hosts", strings.Join(remoteHosts, ","), "msg", "starting monitoring")
 
-	checker := net.NewPingChecker(remoteHost, privileged)
+	checker := net.NewPingChecker(remoteHosts, privileged)
 
 	// Run a check immediately, unless the context has already been cancelled
 	select {
