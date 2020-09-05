@@ -38,7 +38,12 @@ var watchCmd = &cobra.Command{
 	Use:   "watch",
 	Short: "Periodically checks external connectivity, forcing a reconnect if necessary",
 	Long: `Regularly pings an external server to check for connectivity issues. If packets
-are lost, then connect to the router and reset the modem.`,
+are lost, then connect to the router and reset the modem.
+
+If multiple remote hosts are specified, the additional hosts will be used to confirm a loss
+of connectivity. In the event that the ping test to the first host fails, the second host
+will be tested (and so on), and the connection will only be treated as down if all hosts fail.
+This is useful to defend against outages on the remote end from triggering a reset.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		internal.WatchReset(ctx, logger, conn, interval, privileged, remoteHosts)
 	},
@@ -49,5 +54,5 @@ func init() {
 
 	watchCmd.Flags().BoolVarP(&privileged, "raw-ping", "p", false, "Attempt to use raw sockets to send ping (ignored on Windows)")
 	watchCmd.Flags().UintVarP(&interval, "interval", "i", 15, "The interval, in seconds, between ping tests")
-	watchCmd.Flags().StringSliceVarP(&remoteHosts, "remote", "r", []string{"1.1.1.1"}, "The remote address to ping to test connectivity")
+	watchCmd.Flags().StringSliceVarP(&remoteHosts, "remote", "r", []string{"1.1.1.1"}, "The remote address to ping to test connectivity. May be specified multiple times to defend against remote outages.")
 }
